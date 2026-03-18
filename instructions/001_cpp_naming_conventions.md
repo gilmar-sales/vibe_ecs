@@ -7,7 +7,7 @@ alwaysApply: true
 
 File names should be short and use only **lowercase letters**, separated by a **dash** if needed.
 
-* **Format:** `file-name.cpp` / `file-name.h`
+* **Format:** `file-name.cpp` / `file-name.hpp`
 * **Example:** `user-manager.cpp`
 
 ### 2. Classes and Structures (Types)

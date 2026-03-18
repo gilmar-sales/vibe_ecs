@@ -1,5 +1,3 @@
-#include "vibe-ecs.h"
+#include "vibe-ecs.hpp"
 
-std::string vibe_version() {
-    return "0.0.1";
-}
+std::string vibe_version() { return "0.0.1"; }

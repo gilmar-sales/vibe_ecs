@@ -1,4 +1,4 @@
-file(GLOB_RECURSE BENCH_FILES "bench_*.cpp")
+file(GLOB_RECURSE BENCH_FILES "*_bench.cpp")
 
 add_executable(vibe_ecs_benchmarks ${BENCH_FILES})
 
