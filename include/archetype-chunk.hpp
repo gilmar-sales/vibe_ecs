@@ -11,7 +11,7 @@
 #include "entity.hpp"
 #include "sparse-set.hpp"
 
-constexpr size_t CHUNK_CAPACITY = 64;
+constexpr size_t CHUNK_CAPACITY = 4096;
 
 template <typename T>
 concept Component = requires(T &t) {
@@ -54,6 +54,10 @@ public:
   template <typename Func> void for_each_entity(Func &&func);
 
   template <typename Func> void for_each_entity(Func &&func) const;
+
+  template <typename Func> void for_each(Func &&func);
+
+  template <typename Func> void for_each(Func &&func) const;
 
   auto begin() const { return m_entities.begin(); }
   auto end() const { return m_entities.end(); }
@@ -170,6 +174,49 @@ template <typename Func>
 void ArchetypeChunk<Components...>::for_each_entity(Func &&func) const {
   for (const auto &entity : m_entities) {
     func(entity);
+  }
+}
+
+template <typename... Components>
+template <typename Func>
+void ArchetypeChunk<Components...>::for_each(Func &&func) {
+  m_entities.for_each_with_index([&](size_t idx, Entity entity) {
+    auto get_components = [&]<size_t... Is>(std::index_sequence<Is...>) {
+      return std::forward_as_tuple(std::get<Is>(m_components).m_data[idx]...);
+    };
+    std::apply(
+        [&func, &entity](auto &...args) { func(entity, args...); },
+        get_components(std::make_index_sequence<sizeof...(Components)>{}));
+  });
+}
+
+template <typename... Components>
+template <typename Func>
+void ArchetypeChunk<Components...>::for_each(Func &&func) const {
+  for (const auto &entity : m_entities) {
+    auto idx = get_component_index(entity);
+    if (idx == static_cast<size_t>(-1)) {
+      continue;
+    }
+
+    if constexpr (sizeof...(Components) == 1) {
+      using CompType = std::tuple_element_t<0, std::tuple<Components...>>;
+      func(entity, std::get<0>(m_components).m_data[idx]);
+    } else if constexpr (sizeof...(Components) == 2) {
+      func(entity, std::get<0>(m_components).m_data[idx],
+           std::get<1>(m_components).m_data[idx]);
+    } else if constexpr (sizeof...(Components) == 3) {
+      func(entity, std::get<0>(m_components).m_data[idx],
+           std::get<1>(m_components).m_data[idx],
+           std::get<2>(m_components).m_data[idx]);
+    } else {
+      auto get_components = [&]<size_t... Is>(std::index_sequence<Is...>) {
+        return std::forward_as_tuple(std::get<Is>(m_components).m_data[idx]...);
+      };
+      std::apply(
+          [&func, &entity](auto &...args) { func(entity, args...); },
+          get_components(std::make_index_sequence<sizeof...(Components)>{}));
+    }
   }
 }
 

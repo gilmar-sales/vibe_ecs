@@ -60,7 +60,8 @@ public:
   bool remove(uint64_t id);
   size_t size() const;
   size_t active_count() const;
-  void for_each(auto &&callback) const;
+  inline void for_each(auto &&callback) const;
+  inline void for_each_with_index(auto &&callback) const;
   size_t bucket_count() const;
   SparseBucket<T> *get_bucket(size_t idx) const;
 
@@ -236,10 +237,15 @@ template <typename T> size_t SparseSet<T>::active_count() const {
 }
 
 template <typename T> void SparseSet<T>::for_each(auto &&callback) const {
-  size_t num_buckets = m_sparse_buckets.size();
-
   for (auto &item : m_dense_data) {
     callback(item);
+  }
+}
+
+template <typename T>
+void SparseSet<T>::for_each_with_index(auto &&callback) const {
+  for (auto index = 0; index < m_dense_data.size(); ++index) {
+    callback(index, m_dense_data[index]);
   }
 }
 

@@ -181,6 +181,30 @@ TEST_F(ArchetypeChunkTest, IterateComponents) {
   EXPECT_FLOAT_EQ(sum_vx, 1.0f + 2.0f + 3.0f + 4.0f + 5.0f);
 }
 
+TEST_F(ArchetypeChunkTest, ForEachWithComponents) {
+  for (uint64_t i = 1; i <= 5; ++i) {
+    Entity e(i);
+    m_chunk.add_entity(e);
+
+    TestPositionComponent pos(i, static_cast<float>(i * 10), static_cast<float>(i * 20));
+    m_chunk.set_component(e, pos);
+
+    TestVelocityComponent vel(i, static_cast<float>(i), static_cast<float>(i * -1));
+    m_chunk.set_component(e, vel);
+  }
+
+  float sum_x = 0;
+  float sum_vx = 0;
+
+  m_chunk.for_each([&sum_x, &sum_vx](Entity e, const TestPositionComponent& pos, const TestVelocityComponent& vel) {
+    sum_x += pos.m_x;
+    sum_vx += vel.m_vx;
+  });
+
+  EXPECT_FLOAT_EQ(sum_x, 10.0f + 20.0f + 30.0f + 40.0f + 50.0f);
+  EXPECT_FLOAT_EQ(sum_vx, 1.0f + 2.0f + 3.0f + 4.0f + 5.0f);
+}
+
 class SingleComponentChunkTest : public ::testing::Test {
 protected:
   ArchetypeChunk<TestPositionComponent> m_chunk;
