@@ -64,36 +64,6 @@ static void BM_SparseSet_Iteration_ForEach(benchmark::State &state) {
 
 BENCHMARK(BM_SparseSet_Iteration_ForEach)->Range(100, 100000);
 
-static void BM_SparseSet_Iteration_Direct(benchmark::State &state) {
-  size_t n = state.range(0);
-  SparseSet<BenchId> set;
-
-  for (size_t i = 0; i < n; ++i) {
-    set.insert(BenchId(i));
-  }
-
-  size_t sum = 0;
-  for (auto _ : state) {
-    for (size_t bucket_idx = 0; bucket_idx < set.bucket_count(); ++bucket_idx) {
-      auto *bucket = set.get_bucket(bucket_idx);
-      while (bucket) {
-        for (size_t i = 0; i < 64; ++i) {
-          uint64_t pos = bucket->get(i);
-          if (pos != UINT64_MAX) {
-            sum += pos;
-          }
-        }
-        bucket = bucket->next();
-      }
-    }
-  }
-
-  benchmark::DoNotOptimize(sum);
-  state.SetItemsProcessed(state.iterations() * n);
-}
-
-BENCHMARK(BM_SparseSet_Iteration_Direct)->Range(100, 100000);
-
 static void BM_SparseSet_Mixed(benchmark::State &state) {
   size_t n = state.range(0);
   SparseSet<BenchId> set;
@@ -118,3 +88,68 @@ static void BM_SparseSet_Mixed(benchmark::State &state) {
 }
 
 BENCHMARK(BM_SparseSet_Mixed)->Range(100, 100000);
+
+static void BM_SparseSet_Iterator(benchmark::State &state) {
+  size_t n = state.range(0);
+  SparseSet<BenchId> set;
+
+  for (size_t i = 0; i < n; ++i) {
+    set.insert(BenchId(i));
+  }
+
+  size_t sum = 0;
+  for (auto _ : state) {
+    for (const auto &id : set) {
+      sum += id.m_id;
+    }
+  }
+
+  benchmark::DoNotOptimize(sum);
+  state.SetItemsProcessed(state.iterations() * n);
+}
+
+BENCHMARK(BM_SparseSet_Iterator)->Range(100, 100000);
+
+static void BM_SparseSet_Iterator_RangeFor(benchmark::State &state) {
+  size_t n = state.range(0);
+  SparseSet<BenchId> set;
+
+  for (size_t i = 0; i < n; ++i) {
+    set.insert(BenchId(i));
+  }
+
+  size_t sum = 0;
+  for (auto _ : state) {
+    for (const auto &id : set) {
+      sum += id.m_id;
+    }
+    (void)set.size();
+  }
+
+  benchmark::DoNotOptimize(sum);
+  state.SetItemsProcessed(state.iterations() * n);
+}
+
+BENCHMARK(BM_SparseSet_Iterator_RangeFor)->Range(100, 100000);
+
+static void BM_Baseline_Array_Iteration(benchmark::State &state) {
+  size_t n = state.range(0);
+  std::vector<BenchId> data;
+  data.reserve(n);
+
+  for (size_t i = 0; i < n; ++i) {
+    data.push_back(BenchId(i));
+  }
+
+  size_t sum = 0;
+  for (auto _ : state) {
+    for (const auto &id : data) {
+      sum += id.m_id;
+    }
+  }
+
+  benchmark::DoNotOptimize(sum);
+  state.SetItemsProcessed(state.iterations() * n);
+}
+
+BENCHMARK(BM_Baseline_Array_Iteration)->Range(100, 100000);

@@ -4,7 +4,6 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <limits>
 #include <vector>
 
@@ -64,6 +63,9 @@ public:
   void for_each(auto &&callback) const;
   size_t bucket_count() const;
   SparseBucket<T> *get_bucket(size_t idx) const;
+
+  auto begin() const;
+  auto end() const;
 
 private:
   size_t calculate_bucket_index(uint64_t id) const;
@@ -236,18 +238,8 @@ template <typename T> size_t SparseSet<T>::active_count() const {
 template <typename T> void SparseSet<T>::for_each(auto &&callback) const {
   size_t num_buckets = m_sparse_buckets.size();
 
-  for (size_t bucket_idx = 0; bucket_idx < num_buckets; ++bucket_idx) {
-    SparseBucket<T> *bucket =
-        m_sparse_buckets[bucket_idx]->load(std::memory_order_acquire);
-    while (bucket) {
-      for (size_t i = 0; i < BUCKET_SIZE; ++i) {
-        uint64_t pos = bucket->get(i);
-        if (pos != INVALID_INDEX && pos < m_dense_data.size()) {
-          callback(m_dense_data[pos]);
-        }
-      }
-      bucket = bucket->next();
-    }
+  for (auto &item : m_dense_data) {
+    callback(item);
   }
 }
 
@@ -261,6 +253,14 @@ SparseBucket<T> *SparseSet<T>::get_bucket(size_t idx) const {
     return nullptr;
   }
   return m_sparse_buckets[idx]->load(std::memory_order_acquire);
+}
+
+template <typename T> auto SparseSet<T>::begin() const {
+  return m_dense_data.begin();
+}
+
+template <typename T> auto SparseSet<T>::end() const {
+  return m_dense_data.end();
 }
 
 #endif
